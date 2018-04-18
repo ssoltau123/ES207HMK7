@@ -1,0 +1,43 @@
+---
+title: "ES 207 Homework 7"
+output: html_document
+---
+
+```{r}
+require(tidyverse)
+wq <- read_csv("BayDeltaWQ.csv", col_names = TRUE, na = c("NA", "n/p"), guess_max = 30000)
+```
+
+```{r}
+#First I play around with my data set a bit to see if I notice any correlations between chlorophyll a and other variables based I what I know about chlorophyll
+plot(wq$`Chlorophyll a`)
+plot(wq$`1% Light Depth`, wq$`Chlorophyll a`)
+plot(wq$Depth, wq$`Chlorophyll a`)
+#Since chlorophyll is a light capturing component of plant cells I would expect less of it to exist at greater depths where sunlight penentration decreases.  It's usuless for plant cells to have more chlorophyll in low light conditions (waste of resources and energy)
+plot(wq$`Manganese (Dissolved)`,wq$`Chlorophyll a`)
+plot(wq$`Manganese (Total)`, wq$`Chlorophyll a`)
+#Magnesium is a major building block for chlorophyll in general, so the more of that that is readily avaialable for plant cells to take in and mineralize, the more resources they have to create more chlorphyll if necessary
+plot(wq$Oxygen, wq$`Chlorophyll a`)
+#Since within the chlorophyll during light dependent reactions, water gets split into hydrogen and O2 so I feel the greater concentration of plant cells and chlorophyll the more oxygen that should be released
+
+#While some of these plots are showing up blank for me during my pre-tests, I definitely can notice signs of relationships and correlations between some of the variables like depth and magnesium vs. chlorophyll concentrations.  These are variables I will look into using for my final predictive model
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
