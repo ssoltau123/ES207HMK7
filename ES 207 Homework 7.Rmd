@@ -3,41 +3,166 @@ title: "ES 207 Homework 7"
 output: html_document
 ---
 
+Part I
 ```{r}
 require(tidyverse)
 wq <- read_csv("BayDeltaWQ.csv", col_names = TRUE, na = c("NA", "n/p"), guess_max = 30000)
 ```
 
 ```{r}
+
+par(mfrow=c(2,4))
+
 #First I play around with my data set a bit to see if I notice any correlations between chlorophyll a and other variables based I what I know about chlorophyll
 plot(wq$`Chlorophyll a`)
 plot(wq$`1% Light Depth`, wq$`Chlorophyll a`)
 plot(wq$Depth, wq$`Chlorophyll a`)
-#Since chlorophyll is a light capturing component of plant cells I would expect less of it to exist at greater depths where sunlight penentration decreases.  It's usuless for plant cells to have more chlorophyll in low light conditions (waste of resources and energy)
+#Since chlorophyll is a light capturing component of plant cells I would expect less of it to exist at greater depths where sunlight penentration decreases  It's usuless for plant cells to have more chlorophyll in low light conditions waste of resources and energy
 plot(wq$`Manganese (Dissolved)`,wq$`Chlorophyll a`)
 plot(wq$`Manganese (Total)`, wq$`Chlorophyll a`)
 #Magnesium is a major building block for chlorophyll in general, so the more of that that is readily avaialable for plant cells to take in and mineralize, the more resources they have to create more chlorphyll if necessary
+plot(wq$`Ammonia (Total)`, wq$`Chlorophyll a`) #High pH and ammonia has a negative effect on photosynthesis and can damage plant cells.  Whule plants can take in ammonia as a form of nitrogen, it needs to be materialized rapidly as ammonia in its current form is toxic to the plant cell.  I feel in an environment where pH is high and ammonia concentrations are high, than plant cells will not thrive as well and major die offs are a possibility leading to a decrease in Chlrophyll
+plot(wq$pH, wq$`Chlorophyll a`)
 plot(wq$Oxygen, wq$`Chlorophyll a`)
 #Since within the chlorophyll during light dependent reactions, water gets split into hydrogen and O2 so I feel the greater concentration of plant cells and chlorophyll the more oxygen that should be released
 
 #While some of these plots are showing up blank for me during my pre-tests, I definitely can notice signs of relationships and correlations between some of the variables like depth and magnesium vs. chlorophyll concentrations.  These are variables I will look into using for my final predictive model
 ```
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+```{r}
+#Next I need to clean up my data by removing rows that include the sample dates that don't fit into the 2005-2012 range 
+
 ```
 
-## Including Plots
+install.packages("dplyr")
+```{r}
+require(dbplyr)
+wqs<-wq[12645:14958,]
+wqt<-wq[28122:30158,]
 
-You can also embed plots, for example:
+#Monthly data for 2005-2012
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+wq1<-wq[1:12644,]
+wq2<-wq[14959:28121,]
+
+
+#Monthly data for all other years outside of 2005-2012
+
+#I also realize there are two separate sets of date ranges which I indicated a wq1 or wq2, one has certain data types that do not exist in the other one
+
+#wq2 appears to have data in the variables I'm looking at such as Depth, Manganese, and Chlorophyll a
+
+```
+
+```{r}
+require(tidyverse)
+require(dplyr)
+
+wq2com<-wq2[c(2,4,26,45,69)]
+
+#Subsetting the variables I care about dependent on how correlated my plots seem as well as confrimation with R-squared value in relation to my knowledge about plant cells and chlorophyll
+
+separate(wq2com, "SampleDate", c("Month", "Day", "Year"), sep = "/")
+
+#I wanted to separate my SampleDate into Month, Day, and Year, to make it easier for sorting later
+
+
+```
+
+```{r}
+CD.lm<-lm(wq$`Chlorophyll a`~wq$Depth)
+summary(CD.lm)
+
+CM.lm<-lm(wq$`Chlorophyll a`~wq$`Manganese (Dissolved)`)
+summary(CM.lm)
+
+CA.lm<-lm(wq$`Chlorophyll a`~wq$`Ammonia (Total)`)
+summary(CA.lm)
+
+#Running linear models of my main predicted variables in realtion to chlorophyll a concentrations (water depth, manganese, and ammonia)
+
+```
+
+
+```{r}
+par(mfrow=c(1,3))
+
+plot(wq2com$Depth, wq2com$`Chlorophyll a`)
+
+plot(wq2com$`Ammonia (Total)`, wq2com$`Chlorophyll a`)
+
+plot(wq2com$`Manganese (Dissolved)`, wq2com$`Chlorophyll a`)
+
+#Replotting all my main variables for cleaner comparison
+
+
+```
+
+```{r}
+
+ggplot(wq2com, aes(x = log(wq2com$Depth), y = wq2com$`Chlorophyll a`)) + geom_point()
+
+ggplot(wq2com, aes(x = log(wq2com$`Manganese (Dissolved)`), y = wq2com$`Chlorophyll a`)) + geom_point()
+
+ggplot(wq2com, aes(x = log(wq2com$`Ammonia (Total)`), y = wq2com$`Chlorophyll a`)) + geom_point()
+
+#Data clean uo and log transform to normalize data points
+
+```
+
+```{r}
+#Newer regression models using the cleaner data
+
+CvD <- lm(log(wq2com$`Depth`)~wq2com$`Chlorophyll a`, data = wq2com)
+summary(CvD)
+CvA <- lm(log(wq2com$`Ammonia (Total)`)~wq2com$`Chlorophyll a`, data = wq2com)
+summary(CvA)
+CvM <- lm(log(wq2com$`Manganese (Dissolved)`)~wq2com$`Chlorophyll a`, data = wq2com)
+summary(CvM)
+
+```
+
+install.packages("lubridate")
+install.packages("modelr")
+```{r}
+
+require(modelr)
+?modelr::add_predictions
+
+wq2com <- wq2com %>% 
+  spread_predictions(CvD, CvM, CvA)
+wq2com
+
+#Compare predictions
+
+```
+
+```{r}
+ggplot(wq2com, aes(x = wq2com$`Ammonia (Total)`, y = exp(CvA))) + geom_point()+stat_smooth(method = "lm", se = F) + geom_abline(linetype = "dashed")
+
+ggplot(wq2com, aes(x = wq2com$`Manganese (Dissolved)`, y = exp(CvM))) + geom_point()+stat_smooth(method = "lm", se = F) + geom_abline(linetype = "dashed")
+
+ggplot(wq2com, aes(x = wq2com$Depth, y = exp(CvD))) + geom_point()+stat_smooth(method = "lm", se = F) + geom_abline(linetype = "dashed")
+
+# It looks like Manganese is the strongest variable and predictor for Chlrophyll a based on the models I ran to determine best fit and minimum variance in residuals.  
+
+```
+
+```{r}
+#Multiple Correlation
+pairs(~wq2com$`Chlorophyll a`+ wq2com$Depth + wq2com$`Manganese (Dissolved)` + wq2com$`Ammonia (Total)`, data = wq2com)
+
+cov(wq2com[c(8)])
+cor(wq2com[c(8)])
+
+
+```
+
+
+
+
