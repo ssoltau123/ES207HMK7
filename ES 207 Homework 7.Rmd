@@ -4,6 +4,13 @@ output: html_document
 ---
 
 Part I
+
+ For the Water Years 2005-2012, develop a predictive model of the mean monthly Chl-a concentration in the California Bay Delta using  other mean monthly water quality variables.
+
+Be sure to show your work, including multiple model comparison (or step models), provide quantification and explain the reasoning behind your final model selection.
+Which variables are highly correlated with the others? How did you account for this?
+Be sure to demonstrate that you have accounted for all assumptions in your regression. Identify any badly fitted observations, discuss whether your residuals are following expected patterns, and discuss whether there are any possible explanations for any poorly modeled observations.
+Quantify how much variance in mean monthly Chl-a is explained by the variables you selected. 
 ```{r}
 require(tidyverse)
 wq <- read_csv("BayDeltaWQ.csv", col_names = TRUE, na = c("NA", "n/p"), guess_max = 30000)
@@ -153,6 +160,7 @@ ggplot(wq2com, aes(x = wq2com$Depth, y = exp(CvD))) + geom_point()+stat_smooth(m
 
 ```
 
+
 ```{r}
 #Multiple Correlation
 pairs(~wq2com$`Chlorophyll a`+ wq2com$Depth + wq2com$`Manganese (Dissolved)` + wq2com$`Ammonia (Total)`, data = wq2com)
@@ -160,9 +168,92 @@ pairs(~wq2com$`Chlorophyll a`+ wq2com$Depth + wq2com$`Manganese (Dissolved)` + w
 cov(wq2com[c(8)])
 cor(wq2com[c(8)])
 
-
 ```
 
 
+```{r}
+
+rmse <- function(obs, pred) {sqrt(mean((obs-pred)^2))}
+mae <- function(obs, pred) {mean(abs(obs-pred))}
+pbias <- function(obs, pred) {100*(sum(pred-obs)/sum(obs))}
+
+man_stats <- t(tibble(rmse = rmse(wq2com$`Manganese (Dissolved)`,exp(wq2com$CvM)), 
+                     mae = mae(wq2com$`Manganese (Dissolved)`,exp(wq2com$CvM)), 
+                     pbias = pbias(wq2com$`Manganese (Dissolved)`,exp(wq2com$CvM)), 
+                     cor = cor(wq2com$`Manganese (Dissolved)`,exp(wq2com$CvM)))
+
+chl_stats <- t(tibble(rmse = rmse(wq2com$`Chlorophyll a`,wq2com$`Chlorophyll a`.fromC), 
+                     mae = mae(wq2com$`Chlorophyll a`,wq2com$`Chlorophyll a`.fromC), 
+                     pbias = pbias(wq2com$`Chlorophyll a`,wq2com$`Chlorophyll a`.fromC), 
+                     cor = cor(wq2com$`Chlorophyll a`,wq2com$`Chlorophyll a`.fromC)))
+stats <- cbind(load.stats, conc.stats)
+
+colnames(stats) <- c("Manganese", "Chlorophyll")
+stats
 
 
+```
+
+Part II
+
+Parallel Regression- Parallel regression specifies an additive model, where there is one regression line (for the continuous predictor) which is displaced vertically according to the mean value of the discrete predictor. It hypothesizes that the only effect of the discrete predictor is to adjust the mean, but that the relation between the continuous predictor and the response variable is then the same for all classes of the discrete predictor.
+
+Using your mean monthly water quality dataset for CA WY 2005-2012, create a new discrete value called "season", and assign a label to your data for "wet season" and "dry season" (you will have decide what constitutes wet and dry). Model the mean monthly Chl-a concentration as a function of season and the water quality variable you idenitifed as MOST important in explaining the variance of Chl-a from question 1. 
+
+Model them first separately, then as an additive model, e.g.:
+lm(Chl-a ~ season)
+lm(Chl-a ~ my_most_important_variable)
+lm(Chl-a ~ season + my_most_important_variable)
+How much of the variation in Chl-a is explained by season? By your most important variable? By both together? Is the combined model better than individual models? 
+In the parallel regression model (season and your most important variable as predictors), what are the differences in the means between seasons? What is the slope of the linear regression after accounting for season? How does this compare with the slope of the linear regression not considering season?
+Are the residuals normally distributed? 
+Plot Chl-a vs your most important variable, with the observations colored by season. Add the paralell regression lines from the combined model in the appropraite colors, and add the univariate regression line.
+
+
+library(lubridate)
+require(readxl)
+require(broom)
+require(car)
+
+install.packages("broom")
+install.packages("car")
+
+```{r}
+#Wet Season November-May Dry Season June-October
+season <- ifelse(wq2com$SampleDate >=11|wq2com$SampleDate<=6, "wet", "dry")
+as.data.frame(season)
+as.character(season)
+
+as.character(wq2com$`Chlorophyll a`)
+```
+
+```{r}
+#	Model them first separately, then as an additive model 
+
+#lm(Chl-a ~ season)
+lm.Seas<-lm(wq2com$wq.season~wq2com$`Chlorophyll a`, na.rm=T)
+
+#lm(Chl-a ~ my_most_important_variable)
+lm.Man<-lm(wq2com$`Manganese (Dissolved)`~wq2com$`Chlorophyll a`, data = wq2com)
+summary(lm.Man)
+#lm(Chl-a ~ season + my_most_important_variable)
+
+lm.Man.Seas <- lm(wq2com$`Chlorophyll a` ~ wq2com$`Manganese (Dissolved)` + wq2com$wq.season, data = wq2com); summary(lm.chla.season.tmp)
+
+```
+
+```{r}
+
+var.man <- var(wq2com$`Chlorophyll a`, wq2com$`Manganese (Dissolved)`, na.rm=T)
+var.chla.tmp
+
+var.man.season <- var(wy.select$`Chlorophyll a`, wy.select$season)
+var.chla.season
+
+```
+
+```{r}
+
+ggplot(wq2com, aes(x = wq2com$wq.season, y = wq2com$`Chlorophyll a`) + geom_point()
+       
+```
