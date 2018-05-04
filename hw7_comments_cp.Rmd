@@ -1,9 +1,7 @@
 ---
 title: "Comments for S. Soltau HW-7 ES207"
-author: "Cininta Pertiwi"
-output:
-  html_document:
-    df_print: paged
+author: Cininta Pertiwi
+output: html_notebook
 ---
 
 I reference the codes in your .Rmd file by the line number of the code.
@@ -72,6 +70,3 @@ name_of_existing_tibble$season <- ifelse(wq2com$SampleDate >=11|wq2com$SampleDat
 ##### **Other**
 
 * I'm not sure if this was just on my side but I was not able to get outputs from the chunks in Part II. Initially I thought it may have had to do with the wrangling of the season category but then I looked at the code and it may be because it was not able to find some of the variables in the code. The variable `wq.season` was called in lines 234, 241, and 257 but it does seem to have been previously created. the same goes for variable `wy.select` in line 250.
-
-  
-  
